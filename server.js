@@ -24,50 +24,71 @@ http.createServer(function(request, response) {
   
   if((url.parse(request.url).pathname == "/") && !(isNull(url.parse(request.url).query))){
     link=querystring.parse(url.parse(request.url).query)["a"];
-    var rePattern = new RegExp('^[a-zA-Z0-9:/\\\\.\'"]*$');
-    var arrMatches = link.match(rePattern);
-    if(arrMatches!=null && arrMatches["index"]>-1){
-      child = exec('./hs_chk.sh '+link,
-        function (error, stdout, stderr) {
-          response.writeHead(200, {"Content-Type": "text/html"});
-          res=""
-          fs.readFile("./head.html", "binary", function(err, file) {
-            res=res+file;
-            if(stdout.indexOf("200") > -1){
-              res=res+'<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'+link+' is Online!">';
-            } else if(stdout.indexOf("302") > -1) {
-              res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'+link+' is probably Offline! (302 - HTTP redirect)">';
-            } else if(stdout.indexOf("404") > -1 || stdout.indexOf("502") > -1 || stdout.indexOf("503") > -1) {
-              res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'+link+' is Offline! (Error: '+stdout+')">';
-            }
-            fs.readFile("./foot.html", "binary", function(err, file) {
-              res=res+file;
-              response.write(res);
+    json=querystring.parse(url.parse(request.url).query)["format"]
+    if(link != undefined){
+      var rePattern = new RegExp('^[a-zA-Z0-9:/\\\\.\'"]*$');
+      var arrMatches = link.match(rePattern);
+      if(arrMatches!=null && arrMatches["index"]>-1){
+        child = exec('./hs_chk.sh '+link,
+          function (error, stdout, stderr) {
+            if (json == "json"){
+              response.writeHead(200, {"Content-Type": "application/json"});
+              jobject = {"url":link,"status":stdout.replace(/[\n\r]/g, '')};
+              response.write(JSON.stringify(jobject));
               response.end();
-            });
-          });
+            }
+            else {
+              response.writeHead(200, {"Content-Type": "text/html"});
+              res=""
+              fs.readFile("./head.html", "binary", function(err, file) {
+                res=res+file;
+                if(stdout.indexOf("200") > -1){
+                  res=res+'<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                  res=res+link+' is Online!">';
+                } else if(stdout.indexOf("302") > -1) {
+                  res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                  res=res+link+' is probably Offline! (302 - HTTP redirect)">';
+                } else if(stdout.indexOf("403") > -1) {
+                  res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                  res=res+link+' don\'t want to be tracked. (probably Online) (403 - Forbidden)">';
+                } else if(stdout.indexOf("404") > -1 || stdout.indexOf("502") > -1 || stdout.indexOf("503") > -1) {
+                  res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                  res=res+link+' is Offline! (Error: '+stdout+')">';
+                }
+                fs.readFile("./foot.html", "binary", function(err, file) {
+                  res=res+file;
+                  response.write(res);
+                  response.end();
+                });
+              });
+            }
 
-          //if(stdout=='200'){
-          //  res+='<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'+querystring.parse(url.parse(request.url).query)["a"]+' Is Online!">'
-          //}
-          
-          if (error !== null) {
-            console.log('exec error: ' + error);
-          }
-          return;
-      });
-    } else {
-      response.writeHead(200, {"Content-Type": "text/html"});
-      res=""
-      fs.readFile("./head.html", "binary", function(err, file) {
-        res=res+file;
-        res=res+'<input disabled style="background-color: black;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="Error!">';
-        fs.readFile("./foot.html", "binary", function(err, file) {
+            if (error !== null) {
+              console.log('exec error: ' + error);
+            }
+            return;
+        });
+      } else {
+        response.writeHead(200, {"Content-Type": "text/html"});
+        res=""
+        fs.readFile("./head.html", "binary", function(err, file) {
           res=res+file;
-          response.write(res);
+          res=res+'<input disabled style="background-color: black;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="Error!">';
+          fs.readFile("./foot.html", "binary", function(err, file) {
+            res=res+file;
+            response.write(res);
+            response.end();
+          });
+        });
+      }
+    }else{
+      if (json == "json"){
+        response.writeHead(200, {"Content-Type": "text/html"});
+        fs.readFile("./api.html", "binary", function(err, file) {
+          response.write(file);
           response.end();
         });
-      });
+      }
     }
     return;
   }
@@ -89,13 +110,13 @@ http.createServer(function(request, response) {
       return;
     }
 
-    if (fs.statSync(filename).isDirectory()) filename += '/index.html';
+    if (fs.statSync(filename).isDirectory()) filename += 'index.html';
 
-    if (filename == '/' || filename == '/index.html') {
+    if (uri == '/' || uri == '/index.html') {
       res="";
       fs.readFile("./head.html", "binary", function(err, file) {
         res=res+file;
-        res=res+'<input disabled style="background-color: black;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="Error!">';
+        //res=res+'<input disabled style="background-color: black;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="Error!">';
         fs.readFile("./foot.html", "binary", function(err, file) {
           res=res+file;
           response.writeHead(200, {"Content-Type": "text/html"});

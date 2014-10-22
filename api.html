@@ -1,0 +1,31 @@
+<html>
+<body>
+This service provide the easiest API possible.<br>
+Also this page is simple as possible.<br>
+<h3>Get server status:</h3>
+<b>Request:</b><br>
+<pre>
+  GET ?a=[hidden service link]&format=json<br>
+  GET => request type
+    a: the hidden service link (can be with or without "HTTP://" but it must be a valid .onion domain)
+    format: the response format (only json avviable right now)<br/>
+</pre>
+<b>Response:</b>
+<pre>
+  JSON Object
+  { 
+    "url": the request's link/a argument
+    "status": an HTTP Protocol status (possible status: 200,302,403,404,502,503)
+  }
+</pre>
+<br/>
+<a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">Read this for a description of HTTP status code</a><br/>
+<br/>
+<br/>
+So if the request is something like this:<br/>
+<pre>http://localhost:8888/?a=ol56t3xahrpk2b62.onion&format=json</pre>
+<br/>
+The response will be something like:<br/>
+<pre>{"url":"ol56t3xahrpk2b62.onion","status":"200"}</pre>
+</body>
+</html>
