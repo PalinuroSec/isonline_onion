@@ -29,7 +29,7 @@ http.createServer(function(request, response) {
       var rePattern = new RegExp('^[a-zA-Z0-9:/\\\\.\'"]*$');
       var arrMatches = link.match(rePattern);
       if(arrMatches!=null && arrMatches["index"]>-1){
-        if (link.substring(0,5) != "http:") link=link.substring(0,4)+link.substring(5,link.lenght)
+        if (link.substring(0,5) == "https") link=link.substring(0,4)+link.substring(5,link.lenght)
         child = exec('./hs_chk.sh '+link,
           function (error, stdout, stderr) {
             if (json == "json"){
