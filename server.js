@@ -48,7 +48,7 @@ http.createServer(function(request, response) {
                   res=res+link+' is Online!">';
                 } else if(stdout.indexOf("302") > -1 || stdout.indexOf("301") > -1) {
                   res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' is probably Offline! (301 - 302 - HTTP redirect)">';
+                  res=res+link+' is probably Online! (301 - 302 - HTTP redirect)">';
                 } else if(stdout.indexOf("403") > -1) {
                   res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
                   res=res+link+' don\'t want to be tracked. (probably Online) (403 - Forbidden)">';
