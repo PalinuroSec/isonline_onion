@@ -29,6 +29,7 @@ http.createServer(function(request, response) {
       var rePattern = new RegExp('^[a-zA-Z0-9:/\\\\.\'"]*$');
       var arrMatches = link.match(rePattern);
       if(arrMatches!=null && arrMatches["index"]>-1){
+        if (link.substring(0,5) != "http:") link=link.substring(0,4)+link.substring(5,link.lenght)
         child = exec('./hs_chk.sh '+link,
           function (error, stdout, stderr) {
             if (json == "json"){
@@ -45,15 +46,18 @@ http.createServer(function(request, response) {
                 if(stdout.indexOf("200") > -1){
                   res=res+'<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
                   res=res+link+' is Online!">';
-                } else if(stdout.indexOf("302") > -1) {
+                } else if(stdout.indexOf("302") > -1 || stdout.indexOf("301") > -1) {
                   res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' is probably Offline! (302 - HTTP redirect)">';
+                  res=res+link+' is probably Offline! (301 - 302 - HTTP redirect)">';
                 } else if(stdout.indexOf("403") > -1) {
                   res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
                   res=res+link+' don\'t want to be tracked. (probably Online) (403 - Forbidden)">';
                 } else if(stdout.indexOf("404") > -1 || stdout.indexOf("502") > -1 || stdout.indexOf("503") > -1) {
                   res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
                   res=res+link+' is Offline! (Error: '+stdout+')">';
+                } else {
+                  res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                  res=res+link+' can\'t retrive status - Generic Error">';
                 }
                 fs.readFile("./foot.html", "binary", function(err, file) {
                   res=res+file;
