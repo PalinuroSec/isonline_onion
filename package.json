@@ -1,0 +1,22 @@
+{
+  "name": "isonline_thisonion",
+  "description": "Detect if an HiddenService is online",
+  "author": "TheZero <io@thezero.org> (http://thezero.org/)",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=0.10.32"
+  },
+  "bugs": {
+    "url": "https://github.com/TheZ3ro/isonline_thisonion/issues"
+  },
+  "dependencies": {
+    "request": "^2.58.0",
+  },
+  "homepage": "http://ishsup.in/",
+  "license": "MIT",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheZ3ro/isonline_thisonion.git"
+  },
+}

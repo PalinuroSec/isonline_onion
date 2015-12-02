@@ -3,8 +3,6 @@ var http = require('http'),
     path = require('path'),
     fs = require('fs'),
     request = require('request'),
-    //spawn = require('child_process').spawn,
-    exec = require('child_process').exec,
     querystring = require('querystring'),
     port = process.argv[2] || 8888;
 
