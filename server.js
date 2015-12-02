@@ -1,76 +1,83 @@
-var http = require("http"),
-    url = require("url"),
-    path = require("path"),
-    fs = require("fs"),
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs'),
+    request = require('request'),
     //spawn = require('child_process').spawn,
     exec = require('child_process').exec,
-    querystring = require("querystring")
+    querystring = require('querystring'),
     port = process.argv[2] || 8888;
 
+var r = request.defaults({'proxy': 'http://127.0.0.1:8118'}); // privoxy
 
-function isNull(anode){
-  if (anode=='undefined'){ return true;} //bscontact
-  else{
-    if (anode===null){ return true;} //cosmo
-    else{
+function isNull (anode) {
+  if (anode == 'undefined') {
+    return true;
+  } else {
+    if (anode === null) {
+      return true;
+    } else {
       return false;
     }
   }
 }
 
-http.createServer(function(request, response) {
-  
-  console.log(request.url);
-  
-  if((url.parse(request.url).pathname == "/") && !(isNull(url.parse(request.url).query))){
-    link=querystring.parse(url.parse(request.url).query)["a"];
-    json=querystring.parse(url.parse(request.url).query)["format"]
-    if(link != undefined){
+function Urify (str) {
+  var a = str;
+  if (str.substring(0, 8) !== 'https://' && str.substring(0, 7) !== 'http://') {
+    a = 'http://' + str;
+  }
+  return a;
+}
+
+http.createServer(function (request, response) {
+  if((url.parse(request.url).pathname === '/') && !(isNull(url.parse(request.url).query))) {
+    var link = querystring.parse(url.parse(request.url).query)['a'];
+    var json = querystring.parse(url.parse(request.url).query)['format'];
+    if(link !== undefined) {
       var rePattern = new RegExp('^[a-zA-Z0-9:/\\\\.\'"]*$');
       var arrMatches = link.match(rePattern);
-      if(arrMatches!=null && arrMatches["index"]>-1){
-        if (link.substring(0,5) == "https") link=link.substring(0,4)+link.substring(5,link.lenght)
-        child = exec('./hs_chk.sh '+link,
-          function (error, stdout, stderr) {
-            if (json == "json"){
-              response.writeHead(200, {"Content-Type": "application/json"});
-              jobject = {"url":link,"status":stdout.replace(/[\n\r]/g, '')};
-              response.write(JSON.stringify(jobject));
-              response.end();
-            }
-            else {
-              response.writeHead(200, {"Content-Type": "text/html"});
-              res=""
-              fs.readFile("./head.html", "binary", function(err, file) {
+      if(arrMatches !== null && arrMatches['index'] > -1) {
+        link = Urify(link);
+        r.get(link)
+         .on('response', function (resp) {
+          status = resp.statusCode;
+          if (json == 'json') {
+            response.writeHead(200, {"Content-Type": "application/json"});
+            jobject = {"url":link,"status":status};
+            response.write(JSON.stringify(jobject));
+            response.end();
+          }
+          else {
+            response.writeHead(200, {"Content-Type": "text/html"});
+            res = ""
+            fs.readFile("./head.html", "binary", function (err, file) {
+              res=res+file;
+              if(status == "200"){
+                res=res+'<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                res=res+link+' is Online!">';
+              } else if(status == "302" || status == "301") {
+                res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                res=res+link+' is probably Online! (301 - 302 - HTTP redirect)">';
+              } else if(status == "403") {
+                res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                res=res+link+' don\'t want to be tracked. (probably Online) (403 - Forbidden)">';
+              } else if(status == "404" || status == "502" || status == "503") {
+                res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                res=res+link+' is Offline! (Error: '+status+')">';
+              } else {
+                res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
+                res=res+link+' can\'t retrive status - Generic Error">';
+              }
+              fs.readFile("./foot.html", "binary", function(err, file) {
                 res=res+file;
-                if(stdout.indexOf("200") > -1){
-                  res=res+'<input disabled style="background-color: green;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' is Online!">';
-                } else if(stdout.indexOf("302") > -1 || stdout.indexOf("301") > -1) {
-                  res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' is probably Online! (301 - 302 - HTTP redirect)">';
-                } else if(stdout.indexOf("403") > -1) {
-                  res=res+'<input disabled style="background-color: orange;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' don\'t want to be tracked. (probably Online) (403 - Forbidden)">';
-                } else if(stdout.indexOf("404") > -1 || stdout.indexOf("502") > -1 || stdout.indexOf("503") > -1) {
-                  res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' is Offline! (Error: '+stdout+')">';
-                } else {
-                  res=res+'<input disabled style="background-color: red;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="'
-                  res=res+link+' can\'t retrive status - Generic Error">';
-                }
-                fs.readFile("./foot.html", "binary", function(err, file) {
-                  res=res+file;
-                  response.write(res);
-                  response.end();
-                });
+                response.write(res);
+                response.end();
               });
-            }
-
-            if (error !== null) {
-              console.log('exec error: ' + error);
-            }
-            return;
+            });
+          }
+        }).on('error', function(err) {
+          console.log(err)
         });
       } else {
         response.writeHead(200, {"Content-Type": "text/html"});
@@ -96,14 +103,14 @@ http.createServer(function(request, response) {
     }
     return;
   }
-	
-  var uri = url.parse(request.url).pathname
-    , filename = path.join(process.cwd(), uri);
+
+  var uri = url.parse(request.url).pathname,
+    filename = path.join(process.cwd(), uri);
 
   var contentTypesByExtension = {
-    '.html': "text/html",
-    '.css':  "text/css",
-    '.js':   "text/javascript"
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript'
   };
 
   fs.exists(filename, function(exists) {
@@ -120,7 +127,6 @@ http.createServer(function(request, response) {
       res="";
       fs.readFile("./head.html", "binary", function(err, file) {
         res=res+file;
-        //res=res+'<input disabled style="background-color: black;color:#FFF" class="btn btn-block btn-lg btn-primary" type="submit" value="Error!">';
         fs.readFile("./foot.html", "binary", function(err, file) {
           res=res+file;
           response.writeHead(200, {"Content-Type": "text/html"});
@@ -130,7 +136,7 @@ http.createServer(function(request, response) {
       });
     } else {
       fs.readFile(filename, "binary", function(err, file) {
-        if(err) {        
+        if(err) {
           response.writeHead(500, {"Content-Type": "text/plain"});
           response.write(err + "\n");
           response.end();
@@ -148,4 +154,4 @@ http.createServer(function(request, response) {
   });
 }).listen(parseInt(port, 10));
 
-console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
+console.log("Server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
