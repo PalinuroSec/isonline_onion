@@ -6,7 +6,7 @@ var http = require('http'),
     querystring = require('querystring'),
     port = process.argv[2] || 8888;
 
-var r = request.defaults({'proxy': 'http://127.0.0.1:8118'}); // privoxy
+var r = request.defaults({'proxy': 'http://localhost:8118'}); // privoxy
 
 function isNull (anode) {
   if (anode == 'undefined') {
